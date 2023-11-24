@@ -3,3 +3,7 @@
 .python-version
 
 src/leveldict.egg-info/
+
+out/
+
+src/__pycache__/
