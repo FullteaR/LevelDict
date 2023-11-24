@@ -17,13 +17,13 @@ class LevelDict:
 
     
     def __decode(self, item):
-        return pickle.loads
+        return pickle.loads(item)
 
                  
     def __getitem__(self, key):
         self.__checkState()
         key_bytes = self.__encode(key)
-        value_bytes = self.db.Get(key)
+        value_bytes = self.db.Get(key_bytes)
         return self.__decode(value_bytes)
     
 
@@ -31,7 +31,7 @@ class LevelDict:
         self.__checkState()
         key_bytes = self.__encode(key)
         value_bytes = self.__encode(value)
-        self.db.Put(key, value)
+        self.db.Put(key_bytes, value_bytes)
 
 
     def __contains__(self, key):
@@ -40,28 +40,45 @@ class LevelDict:
             return True
         except KeyError:
             return False
+        
     
+    def __len__(self):
+        return len(self.keys(iter=False))
+    
+
+    def __keys_iter(self):
+        for key in self.db.RangeIter(key_from=None, key_to=None, include_value=False):
+            yield self.__decode(key)
+
 
     def keys(self, iter=False):
         if iter:
-            for key, in self.db.RangeIter(key_from=None, key_to=None, include_value=False):
-                yield self.__decode(key
-        return [self.__decode(key) for key in self.db.RangeIter(key_from=None, key_to=None, include_value=False)]
+            return self.__keys_iter()
+        return [key for key in self.__keys_iter()]
+    
+
+    def __values_iter(self):
+        for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True):
+            yield self.__decode(value)
     
 
     def values(self, iter=False):
         if iter:
-            for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True):
-                yield self.__decode(value)
-        return [self.__decode(value) for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True)]
+            return self.__values_iter()
+        return [value for value in self.__values_iter()]
     
+
+    def __items_iter(self):
+        for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True):
+            yield (self.__decode(key), self.__decode(value))
+
 
     def items(self, iter=False):
         if iter:
-            for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True):
-                yield (self.__decode(key), self.__decode(value))
-        return [(self.__decode(key), self.__decode(value)) for key, value in self.db.RangeIter(key_from=None, key_to=None, include_value=True)]
+            return self.__items_iter()
+        return [(key, value) for key, value in self.__items_iter()]
     
 
-
-
+    def clear(self):
+        for key in self.db.RangeIter(key_from=None, key_to=None, include_value=False):
+            self.db.Delete(key)
