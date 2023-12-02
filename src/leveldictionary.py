@@ -36,7 +36,8 @@ class LevelDict:
 
     def __contains__(self, key):
         try:
-            self.__getitem__(self.db, key)
+            key_bytes = self.__encode(key)
+            self.db.Get(key_bytes)
             return True
         except KeyError:
             return False
